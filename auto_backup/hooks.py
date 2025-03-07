@@ -8,6 +8,24 @@ app_license = "mit"
 # Apps
 # ------------------
 
+# scheduler_events = {
+#     "cron": {
+#         "*/1 * * * *": [
+#             "auto_backup.api.backup_script.take_backup"
+#         ]
+#     }
+# }
+
+scheduler_events = {
+    "cron": {
+        "*/15 * * * *": [
+            "auto_backup.api.backup_script.take_backup"
+        ]
+    }
+}
+
+
+
 # required_apps = []
 
 # Each item in the list will be shown as an app in the apps page
