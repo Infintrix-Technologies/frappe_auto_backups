@@ -4,6 +4,8 @@ import time
 from pathlib import Path
 import frappe
 
+
+
 def get_backup_settings():
     settings = frappe.get_single("Backup Setting")
     return {
@@ -12,60 +14,38 @@ def get_backup_settings():
     }
 
 
-# def take_backup():
-#     backup_path = Path.home() / "frappe-backup/sites/localhost/private/backups"
 
-#     print("Starting backup process...")
-
-#     deletion_time = 120
-
-#     # Run the backup command
-#     command = "bench backup --with-files --compress"
-#     process = subprocess.run(command, shell=True, capture_output=True, text=True)
-
-
-#     # Delete backup files older than 5 minutes
-#     now = time.time()
-#     for file in backup_path.glob("*"):
-#         if file.is_file() and now - file.stat().st_mtime > deletion_time:  # 604800 seconds = 7 days
-#             os.remove(file)
-#             print(f"Deleted old backup: {file}")
-
-
-#     if process.returncode == 0:
-#         print("Backup completed successfully.")
-#     else:
-#         print(f"Backup failed: {process.stderr}")
-
-
-
-
-
-
-
-import os
-import time
-import subprocess
-from pathlib import Path
-
-
-
-
+def get_site_name():
+    """Get the current site name dynamically from the sites directory, 
+    removing 'hrms.' prefix if present"""
+    
+    sites_path = Path.home() / "frappe-bench/sites"
+    
+    for site in sites_path.iterdir():
+        if site.is_dir() and (site / "site_config.json").exists(): 
+            site_name = site.name
+            return site_name.removeprefix("hrms.")  
+    
+    return None 
 
 
 
 
 def take_backup():
+    site_name = get_site_name()
+    if not site_name:
+        print("No valid Frappe site found!")
+        return
 
     settings = get_backup_settings()
-    backup_retention_days = settings["backup_retention_days"]
-    backup_time = settings["backup_time"]
+    backup_retention_days = int(settings["backup_retention_days"])
+    backup_time = int(settings["backup_time"])
 
-    backup_path = Path.home() / "frappe-backup/sites/localhost/private/backups"
-    deletion_time = int(backup_retention_days) 
-    min_backup_interval = int(backup_time)  
+    backup_path = Path.home() / f"frappe-backup/sites/{site_name}/private/backups"
+    deletion_time = backup_retention_days
+    min_backup_interval = backup_time  
 
-    print("Starting backup process...")
+    print(f"Starting backup process for site: {site_name}")
 
     # Find the most recent backup file
     latest_backup = None
@@ -85,8 +65,8 @@ def take_backup():
         print("Skipping backup. Last backup was taken recently.")
         return
 
-    # Run the backup command
-    command = "bench backup --with-files --compress"
+    # Run the backup command for the detected site
+    command = f"bench --site {site_name} backup --with-files --compress"
     process = subprocess.run(command, shell=True, capture_output=True, text=True)
 
     if process.returncode == 0:
@@ -94,13 +74,10 @@ def take_backup():
     else:
         print(f"Backup failed: {process.stderr}")
 
-    # Delete old backup files (older than 2 minutes)
+    # Delete old backup files
     for file in backup_path.glob("*"):
         if file.is_file() and (now - file.stat().st_mtime) > deletion_time:
             os.remove(file)
             print(f"Deleted old backup: {file}")
-
-
-
 
 
