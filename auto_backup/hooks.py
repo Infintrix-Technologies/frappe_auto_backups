@@ -18,7 +18,7 @@ app_license = "mit"
 
 scheduler_events = {
     "cron": {
-        "*/45 * * * *": [
+        "0 */2 * * *": [
             "auto_backup.api.backup_script.take_backup"
         ]
     }
